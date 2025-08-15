@@ -282,23 +282,23 @@ def get_scene_info() -> str:
         logger.error(f"Error getting scene info from Isaac: {str(e)}")
         return json.dumps({"status": "error", "error": str(e), "message": "Error getting scene info"})
 
-# @mcp.tool()
-# def get_object_info(ctx: Context, object_name: str) -> str:
-#     """
-#     Get detailed information about a specific object in the Isaac scene.
+@mcp.tool()
+def get_object_info(object_name: str) -> str:
+    """
+    Get detailed information about a specific object in the Isaac scene.
     
-#     Parameters:
-#     - object_name: The name of the object to get information about
-#     """
-#     try:
-#         isaac = get_isaac_connection()
-#         result = isaac.send_command("get_object_info", {"name": object_name})
+    Parameters:
+    - object_name: The name of the object to get information about
+    """
+    try:
+        isaac = get_isaac_connection()
+        result = isaac.send_command("get_object_info", {"name": object_name})
         
-#         # Just return the JSON representation of what Isaac sent us
-#         return json.dumps(result, indent=2)
-#     except Exception as e:
-#         logger.error(f"Error getting object info from Isaac: {str(e)}")
-#         return f"Error getting object info: {str(e)}"
+        # Just return the JSON representation of what Isaac sent us
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        logger.error(f"Error getting object info from Isaac: {str(e)}")
+        return json.dumps({"status": "error", "error": str(e), "message": f"Error getting object info: {str(e)}"})
 
 @mcp.tool("create_physics_scene")
 def create_physics_scene(
@@ -628,7 +628,7 @@ def _process_bbox(original_bbox: list[float] | list[int] | None) -> list[int] | 
     return [int(float(i) / max(original_bbox) * 100) for i in original_bbox] if original_bbox else None
 
 
-#@mcp.tool()
+@mcp.tool()
 def get_meshy_status() -> str:
     """
     Get the status of Meshy 3D generation service.
