@@ -629,7 +629,7 @@ def _process_bbox(original_bbox: list[float] | list[int] | None) -> list[int] | 
 
 
 #@mcp.tool()
-def get_meshy_status(ctx: Context) -> str:
+def get_meshy_status() -> str:
     """
     Get the status of Meshy 3D generation service.
     """
