@@ -24,7 +24,7 @@ SOFTWARE.
 
 # isaac_sim_mcp_server.py
 import time
-from mcp.server.fastmcp import FastMCP, Context, Image
+from mcp.server.fastmcp import FastMCP
 import socket
 import json
 import asyncio
@@ -36,6 +36,18 @@ import os
 from pathlib import Path
 import base64
 from urllib.parse import urlparse
+
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    # Load .env file from project root
+    env_path = Path(__file__).parent.parent / '.env'
+    if env_path.exists():
+        load_dotenv(env_path)
+        logging.info(f"Loaded environment variables from {env_path}")
+except ImportError:
+    # python-dotenv not installed, continue without it
+    pass
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -216,13 +228,8 @@ async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict[str, Any]]:
             _isaac_connection = None
         logger.info("Isaac SimMCP server shut down")
 
-# Create the MCP server with lifespan and verbose logging
-mcp = FastMCP(
-    "IsaacSimMCP",
-    lifespan=server_lifespan,
-    log_level="DEBUG",
-    debug=True,
-)
+# Create the MCP server with lifespan support
+mcp = FastMCP("IsaacSimMCP")
 
 # Resource endpoints
 
@@ -261,21 +268,19 @@ def get_isaac_connection():
 
 
 @mcp.tool()
-def get_scene_info(ctx: Context) -> str:
+def get_scene_info() -> str:
     """Ping status of Isaac Sim Extension Server"""
     try:
         isaac = get_isaac_connection()
         result = isaac.send_command("get_scene_info")
-        logger.debug(f"get_scene_info result: {result}")
+        # Use logger instead of print to avoid corrupting stdio
+        logger.debug(f"Scene info result: {result}")
         
         # Just return the JSON representation of what Isaac sent us
         return json.dumps(result, indent=2)
-        # return json.dumps(result)
-        # return result
     except Exception as e:
         logger.error(f"Error getting scene info from Isaac: {str(e)}")
-        # return f"Error getting scene info: {str(e)}"
-        return {"status": "error", "error": str(e), "message": "Error getting scene info"}
+        return json.dumps({"status": "error", "error": str(e), "message": "Error getting scene info"})
 
 # @mcp.tool()
 # def get_object_info(ctx: Context, object_name: str) -> str:
@@ -329,11 +334,11 @@ def create_physics_scene(
         isaac = get_isaac_connection()
         
         result = isaac.send_command("create_physics_scene", params)
-        return f"create_physics_scene successfully: {result.get('result', '')}, {result.get('message', '')}"
+        return json.dumps({"status": "success", "result": result.get('result', ''), "message": result.get('message', '')})
     except Exception as e:
         logger.error(f"Error create_physics_scene: {str(e)}")
         # return f"Error create_physics_scene: {str(e)}"
-        return {"status": "error", "error": str(e), "message": "Error create_physics_scene"}
+        return json.dumps({"status": "error", "error": str(e), "message": "Error create_physics_scene"})
     
 @mcp.tool("create_robot")
 def create_robot(robot_type: str = "g1", position: List[float] = [0, 0, 0]) -> str:
@@ -352,7 +357,7 @@ def create_robot(robot_type: str = "g1", position: List[float] = [0, 0, 0]) -> s
     """
     isaac = get_isaac_connection()
     result = isaac.send_command("create_robot", {"robot_type": robot_type, "position": position})
-    return f"create_robot successfully: {result.get('result', '')}, {result.get('message', '')}"
+    return json.dumps({"status": "success", "result": result.get('result', ''), "message": result.get('message', '')})
 
 @mcp.tool("omni_kit_command")
 def omni_kit_command(command: str = "CreatePrim", prim_type: str = "Sphere") -> str:
@@ -373,15 +378,15 @@ def omni_kit_command(command: str = "CreatePrim", prim_type: str = "Sphere") -> 
             "command": command,
             "prim_type": prim_type
         })
-        return f"Omni Kit command executed successfully: {result.get('message', '')}"
+        return json.dumps({"status": "success", "message": result.get('message', '')})
     except Exception as e:
         logger.error(f"Error executing Omni Kit command: {str(e)}")
         # return f"Error executing Omni Kit command: {str(e)}"
-        return {"status": "error", "error": str(e), "message": "Error executing Omni Kit command"}
+        return json.dumps({"status": "error", "error": str(e), "message": "Error executing Omni Kit command"})
 
 
 @mcp.tool()
-def execute_script(ctx: Context, code: str) -> str:
+def execute_script(code: str) -> str:
     """
     Before execute script pls check prompt from asset_creation_strategy() to ensure the scene is properly initialized.
     Execute arbitrary Python code in Isaac Sim. Before executing any code, first verify if get_scene_info() has been called to ensure the scene is properly initialized. Always print the formatted code into chat to confirm before execution to confirm its correctness. 
@@ -442,16 +447,16 @@ simulation_context.stop()
     try:
         # Get the global connection
         isaac = get_isaac_connection()
-        logger.debug(f"execute_script code: {code}")
+        logger.debug(f"Executing code: {code[:100]}...")  # Log first 100 chars
         
         result = isaac.send_command("execute_script", {"code": code})
-        logger.debug(f"execute_script result: {result}")
-        return result
+        logger.debug(f"Execution result: {result}")
+        return json.dumps(result) if isinstance(result, dict) else str(result)
         # return f"Code executed successfully: {result.get('result', '')}"
     except Exception as e:
         logger.error(f"Error executing code: {str(e)}")
         # return f"Error executing code: {str(e)}"
-        return {"status": "error", "error": str(e), "message": "Error executing code"}
+        return json.dumps({"status": "error", "error": str(e), "message": "Error executing code"})
                 
 @mcp.prompt()
 def asset_creation_strategy() -> str:
@@ -638,7 +643,6 @@ def get_meshy_status(ctx: Context) -> str:
 
 @mcp.tool("generate_3d_from_text_or_image")
 def generate_3d_from_text_or_image(
-    ctx: Context,
     text_prompt: str = None,
     image_url: str = None,
     position: List[float] = [0, 0, 50],
@@ -673,16 +677,15 @@ def generate_3d_from_text_or_image(
         if result.get("status") == "success":
             task_id = result.get("task_id")
             prim_path = result.get("prim_path")
-            return f"Successfully generated 3D model with Meshy API - task ID: {task_id}, loaded at prim path: {prim_path}"
+            return json.dumps({"status": "success", "task_id": task_id, "prim_path": prim_path, "message": "Successfully generated 3D model with Meshy API"})
         else:
-            return f"Error generating 3D model with Meshy API: {result.get('message', 'Unknown error')}"
+            return json.dumps({"status": "error", "message": result.get('message', 'Unknown error')})
     except Exception as e:
         logger.error(f"Error generating 3D model with Meshy API: {str(e)}")
-        return f"Error generating 3D model with Meshy API: {str(e)}"
+        return json.dumps({"status": "error", "error": str(e), "message": "Error generating 3D model with Meshy API"})
     
 @mcp.tool("search_3d_usd_by_text")
 def search_3d_usd_by_text(
-    ctx: Context,
     text_prompt: str = None,
     target_path: str = "/World/my_usd",
     position: List[float] = [0, 0, 50],
@@ -713,16 +716,15 @@ def search_3d_usd_by_text(
         if result.get("status") == "success":
             task_id = result.get("task_id")
             prim_path = result.get("prim_path")
-            return f"Successfully generated 3D model with task ID: {task_id}, loaded at prim path: {prim_path}"
+            return json.dumps({"status": "success", "task_id": task_id, "prim_path": prim_path, "message": "Successfully generated 3D model"})
         else:
-            return f"Error generating 3D model: {result.get('message', 'Unknown error')}"
+            return json.dumps({"status": "error", "message": result.get('message', 'Unknown error')})
     except Exception as e:
         logger.error(f"Error generating 3D model: {str(e)}")
-        return f"Error generating 3D model: {str(e)}"
+        return json.dumps({"status": "error", "error": str(e), "message": "Error generating 3D model"})
 
 @mcp.tool("transform")
 def transform(
-    ctx: Context,
     prim_path: str,
     position: List[float] = [0, 0, 50],
     scale: List[float] = [10, 10, 10]
@@ -749,12 +751,12 @@ def transform(
         })
         
         if result.get("status") == "success":
-            return f"Successfully transformed model at {prim_path} to position {position} and scale {scale}"
+            return json.dumps({"status": "success", "prim_path": prim_path, "position": position, "scale": scale, "message": "Successfully transformed model"})
         else:
-            return f"Error transforming model: {result.get('message', 'Unknown error')}"
+            return json.dumps({"status": "error", "message": result.get('message', 'Unknown error')})
     except Exception as e:
         logger.error(f"Error transforming model: {str(e)}")
-        return f"Error transforming model: {str(e)}"
+        return json.dumps({"status": "error", "error": str(e), "message": "Error transforming model"})
 
 # Main execution
 
