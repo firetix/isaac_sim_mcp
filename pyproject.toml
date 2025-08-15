@@ -1,0 +1,30 @@
+[project]
+name = "isaac-sim-mcp"
+version = "0.4.0"
+description = "MCP server for controlling NVIDIA Isaac Sim through natural language"
+requires-python = ">=3.10"
+authors = [
+    {name = "omni-mcp", email = "contact@omni-mcp.com"}
+]
+readme = "README.md"
+license = {text = "MIT"}
+keywords = ["mcp", "isaac-sim", "robotics", "simulation", "nvidia"]
+
+dependencies = [
+    "mcp>=1.0.0",
+    "fastmcp>=0.2.0",
+    "python-dotenv>=1.0.0",
+    "requests>=2.31.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/firetix/isaac_sim_mcp"
+Repository = "https://github.com/firetix/isaac_sim_mcp"
+Issues = "https://github.com/firetix/isaac_sim_mcp/issues"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["isaac_mcp"]
