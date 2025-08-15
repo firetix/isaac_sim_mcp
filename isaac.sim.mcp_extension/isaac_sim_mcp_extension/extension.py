@@ -47,8 +47,8 @@ from omni.isaac.nucleus import get_assets_root_path
 from omni.isaac.core.prims import XFormPrim
 import numpy as np
 from omni.isaac.core import World
-# Import Beaver3d and USDLoader
-from isaac_sim_mcp_extension.gen3d import Beaver3d
+# Import Meshy3d and USDLoader
+from isaac_sim_mcp_extension.gen3d import Meshy3d
 from isaac_sim_mcp_extension.usd import USDLoader
 from isaac_sim_mcp_extension.usd import USDSearch3d
 import requests
@@ -635,8 +635,8 @@ class MCPExtension(omni.ext.IExt):
             dict: Dictionary with the task_id and prim_path
         """
         try:
-            # Initialize Beaver3d
-            beaver = Beaver3d()
+            # Initialize Meshy3d
+            meshy = Meshy3d()
             
             # Determine generation method based on inputs
             # if image_url and text_prompt:
@@ -663,11 +663,11 @@ class MCPExtension(omni.ext.IExt):
                 print(f"Using cached model ID: {task_id}")
             elif image_url:
                 # Generate 3D from image only
-                task_id = beaver.generate_3d_from_image(image_url)
+                task_id = meshy.generate_3d_from_image(image_url)
                 print(f"3D model generation from image started with task ID: {task_id}")
             elif text_prompt:
                 # Generate 3D from text
-                task_id = beaver.generate_3d_from_text(text_prompt)
+                task_id = meshy.generate_3d_from_text(text_prompt)
                 print(f"3D model generation from text started with task ID: {task_id}")
             else:
                 return {
@@ -711,8 +711,10 @@ class MCPExtension(omni.ext.IExt):
                 }
             
             from omni.kit.async_engine import run_coroutine
-            task = run_coroutine(beaver.monitor_task_status_async(
-                task_id, on_complete_callback=load_model_into_scene))
+            # Determine task type based on what was used to generate
+            task_type = "image-to-3d" if image_url else "text-to-3d"
+            task = run_coroutine(meshy.monitor_task_status_async(
+                task_id, task_type, on_complete_callback=load_model_into_scene))
             
             return {
                     "status": "success",

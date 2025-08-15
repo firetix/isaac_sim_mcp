@@ -5,6 +5,25 @@ All notable changes to the isaac-sim-mcp project will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-01-15
+
+### Changed
+- **BREAKING**: Migrated from Beaver3D API to Meshy API for 3D model generation
+- Replaced `ARK_API_KEY` and `BEAVER3D_MODEL` environment variables with `MESHY_API_KEY`
+- Updated `Beaver3d` class to `Meshy3d` with improved API integration
+- Enhanced 3D generation with Meshy's preview/refine modes and art style options
+- Improved error handling and status reporting for US-based 3D generation service
+
+### Added
+- Support for Meshy API's art style selection (realistic, cartoon, sculpture)
+- PBR material generation for image-to-3D workflows
+- Enhanced negative prompt support for better 3D generation control
+- US-based 3D generation service with no geographic restrictions
+
+### Improved
+- Better task monitoring with appropriate polling intervals for Meshy API
+- Enhanced error messages and debugging information
+- Updated documentation with Meshy setup instructions
 
 ## [0.3.0] - 2024-04-22
 

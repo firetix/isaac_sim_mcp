@@ -217,11 +217,7 @@ async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict[str, Any]]:
         logger.info("Isaac SimMCP server shut down")
 
 # Create the MCP server with lifespan support
-mcp = FastMCP(
-    "IsaacSimMCP",
-    description="Isaac Sim integration through the Model Context Protocol",
-    lifespan=server_lifespan
-)
+mcp = FastMCP("IsaacSimMCP")
 
 # Resource endpoints
 
@@ -456,9 +452,10 @@ simulation_context.stop()
 def asset_creation_strategy() -> str:
     """Defines the preferred strategy for creating assets in Isaac Sim"""
     return """
-    0. Before anything, always check the scene from get_scene_info(), retrive rool path of assset through return value of assets_root_path.
+    0. Before anything, always check the scene from get_scene_info(), retrieve root path of asset through return value of assets_root_path.
     1. If the scene is empty, create a physics scene with create_physics_scene()
-    2. if execute script due to communication error, then retry 3 times at most
+    2. For 3D model generation, use Meshy API through generate_3d_from_text_or_image() tool
+    3. If execute script due to communication error, then retry 3 times at most
 
     3. For Franka robot simulation, the code should be like this:
 from omni.isaac.core import SimulationContext
@@ -622,11 +619,15 @@ def _process_bbox(original_bbox: list[float] | list[int] | None) -> list[int] | 
 
 
 #@mcp.tool()
-def get_beaver3d_status(ctx: Context) -> str:
+def get_meshy_status(ctx: Context) -> str:
     """
-    TODO: Get the status of Beaver3D.
+    Get the status of Meshy 3D generation service.
     """
-    return "Beaver3D service is Available"
+    import os
+    if os.environ.get("MESHY_API_KEY"):
+        return "Meshy 3D generation service is available"
+    else:
+        return "Meshy service unavailable: MESHY_API_KEY not set"
 
 
 
@@ -639,11 +640,11 @@ def generate_3d_from_text_or_image(
     scale: List[float] = [10, 10, 10]
 ) -> str:
     """
-    Generate a 3D model from text or image, load it into the scene and transform it.
+    Generate a 3D model from text or image using Meshy API, load it into the scene and transform it.
     
     Args:
-        text_prompt (str, optional): Text prompt for 3D generation
-        image_url (str, optional): URL of image for 3D generation
+        text_prompt (str, optional): Text prompt for 3D generation using Meshy text-to-3D
+        image_url (str, optional): URL of image for 3D generation using Meshy image-to-3D
         position (list, optional): Position to place the model [x, y, z]
         scale (list, optional): Scale of the model [x, y, z]
         
@@ -667,12 +668,12 @@ def generate_3d_from_text_or_image(
         if result.get("status") == "success":
             task_id = result.get("task_id")
             prim_path = result.get("prim_path")
-            return f"Successfully generated 3D model with task ID: {task_id}, loaded at prim path: {prim_path}"
+            return f"Successfully generated 3D model with Meshy API - task ID: {task_id}, loaded at prim path: {prim_path}"
         else:
-            return f"Error generating 3D model: {result.get('message', 'Unknown error')}"
+            return f"Error generating 3D model with Meshy API: {result.get('message', 'Unknown error')}"
     except Exception as e:
-        logger.error(f"Error generating 3D model: {str(e)}")
-        return f"Error generating 3D model: {str(e)}"
+        logger.error(f"Error generating 3D model with Meshy API: {str(e)}")
+        return f"Error generating 3D model with Meshy API: {str(e)}"
     
 @mcp.tool("search_3d_usd_by_text")
 def search_3d_usd_by_text(

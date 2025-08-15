@@ -1,0 +1,66 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gcloud compute firewall-rules list:*)",
+      "Bash(gcloud compute instances describe:*)",
+      "Bash(gcloud compute instances list:*)",
+      "Bash(chmod:*)",
+      "Bash(gcloud auth:*)",
+      "Bash(gcloud storage buckets create:*)",
+      "Bash(gcloud storage buckets add-iam-policy-binding:*)",
+      "Bash(gsutil iam:*)",
+      "Bash(gcloud storage cp:*)",
+      "Bash(gcloud storage ls:*)",
+      "Bash(docker compose:*)",
+      "Bash(./robots/mow_mow/test_cloud_urdf.sh:*)",
+      "Bash(./test_gcp_connection.sh:*)",
+      "Bash(./quick_test.sh:*)",
+      "Bash(rm:*)",
+      "Bash(/dev/null)",
+      "Bash(gsutil signurl:*)",
+      "Bash(./setup_vm_gcs_access.sh:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(python3:*)"
+    ],
+    "deny": []
+  },
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay /System/Library/Sounds/Frog.aiff"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "afplay /System/Library/Sounds/Glass.aiff"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .claude/hooks/type_check.py"
+          }
+        ]
+      }
+    ]
+  }
+}

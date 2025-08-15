@@ -430,7 +430,7 @@ class USDLoader:
 
 class USDSearch3d:
     def __init__(self):
-        """Initialize Beaver3d with model name and API key from environment variables"""
+        """Initialize USD Search service with NVIDIA API key"""
         self.api_key = os.environ.get("NVIDIA_API_KEY")
         self.usd_search_server = 'https://ai.api.nvidia.com/v1/omniverse/nvidia/usdsearch'
         if not self.api_key:

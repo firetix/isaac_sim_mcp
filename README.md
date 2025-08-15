@@ -25,27 +25,55 @@ The MCP Server and its extension leverage the Model Context Protocol (MCP) frame
 
 ```bash
 cd ~/Documents
-git clone https://github.com/omni-mcp/isaac-sim-mcp
+git clone https://github.com/firetix/isaac_sim_mcp.git
+cd isaac_sim_mcp
 ```
 
-### Install and Enable Extension
+### Setup API Keys
 
-Isaac Sim extension folder should point to your project folder:
-- Extension location: `~/Documents/isaac-sim-mcp` 
-- Extension ID: `isaac.sim.mcp_extension`
+Set up your API keys for Meshy and NVIDIA services:
 
 ```bash
-# Enable extension in Isaac Simulation
-# cd to your Isaac Sim installation directory
-# You can change assets root to local with --/persistent/isaac/asset_root/default="<your asset location>"
-# By default it is an AWS bucket, e.g. --/persistent/isaac/asset_root/default="/share/Assets/Isaac/4.2"
-# Setup API KEY for Beaver3d and NVIDIA
-export BEAVER3D_MODEL=<your beaver3d model name>
-export export ARK_API_KEY=<Your Bearver3D API Key>
-export NVIDIA_API_KEY="<your nvidia api key  and apply it from https://ngc.nvidia.com/signout>"
+# Option 1: Using environment variables
+export MESHY_API_KEY=<Your Meshy API Key from https://app.meshy.ai/>
+export NVIDIA_API_KEY="<your nvidia api key from https://ngc.nvidia.com/signout>"
 
+# Option 2: Using .env file (recommended for development)
+# Edit the .env file in the project root with your API keys
+```
+
+### Install MCP Dependencies
+
+```bash
+# Install uv if not already installed
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install MCP CLI tools
+uv pip install "mcp[cli]"
+```
+
+### Test MCP Server
+
+```bash
+# Test the MCP server runs correctly
+uv run isaac_mcp/server.py
+
+# Or run with MCP inspector for debugging
+uv run mcp dev isaac_mcp/server.py
+# Visit debug interface at http://localhost:5173
+```
+
+### Install and Enable Isaac Sim Extension
+
+```bash
+# Find your Isaac Sim installation (adjust path as needed)
+# Common locations:
+# ~/.local/share/ov/pkg/isaac-sim-4.2.0  (Linux)
+# ~/Library/Application Support/ov/pkg/isaac-sim-4.2.0  (macOS)
+
+# Enable extension in Isaac Simulation
 cd ~/.local/share/ov/pkg/isaac-sim-4.2.0
-./isaac-sim.sh --ext-folder /home/ubuntu/Documents/isaac-sim-mcp/ --enable isaac.sim.mcp_extension 
+./isaac-sim.sh --ext-folder ~/Documents/isaac_sim_mcp/ --enable isaac.sim.mcp_extension 
 ```
 
 Verify the extension starts successfully. The output should look like:
@@ -61,35 +89,28 @@ The extension should be listening at **localhost:8766** by default.
 
 
 
-### Install MCP Server
+### Configure Cursor AI (Optional)
 
-1. Go to terminal and run, make sure mcp server could start sucessfully at terminal with base venv.
-   ```
-   uv pip install "mcp[cli]"
-   uv run /home/ubuntu/Documents/isaac-sim-mcp/isaac_mcp/server.py
-   ```
-2. Start Cursor and open the folder `~/Documents/isaac-sim-mcp`
-3. Go to Cursor preferences, choose MCP and add a global MCP server:
+To use with Cursor AI editor:
+
+1. Start Cursor and open the project folder
+2. Go to Cursor preferences, choose MCP and add a global MCP server:
 
 ```json
 {
     "mcpServers": {
         "isaac-sim": {
-            "command": "uv run /home/ubuntu/Documents/isaac-sim-mcp/isaac_mcp/server.py"
+            "command": "uv run /absolute/path/to/isaac_sim_mcp/isaac_mcp/server.py"
         }
     }
 }
 ```
 
-### Development Mode
+### Verify Installation
 
-To develop the MCP Server, start the MCP inspector:
-
-```bash
-uv run mcp dev ~/Documents/isaac-sim-mcp/isaac_mcp/server.py
-```
-
-You can visit the debug page through http://localhost:5173
+1. **MCP Server**: Should start without errors and show available tools
+2. **Isaac Sim Extension**: Should load and show "Isaac Sim MCP server started on localhost:8766"
+3. **API Keys**: Test 3D generation with a simple prompt to verify Meshy API connectivity
 
 ## Example Prompts for Simulation
 Notice: Switch to Agent mode in top left of Chat dialog before you type prompt and choose sonnet 3.7 for better coding.
@@ -123,10 +144,10 @@ reference to g1.py to create an new g1 robot simulation and allow robot g1 walk 
 create more obstacles in the stage
 
 ```
-### Gen3D with beaver3d model support
+### Gen3D with Meshy model support
 
 ```
-Use following images to generate beaver 3d objects and place them into a grid area across [0, 0, 0] to [40, 40, 0] with scale [3, 3, 3]
+Use following images to generate 3D objects and place them into a grid area across [0, 0, 0] to [40, 40, 0] with scale [3, 3, 3]
 
 <your image url here, could be multiple images urls>
 ```

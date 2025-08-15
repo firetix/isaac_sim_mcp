@@ -28,14 +28,13 @@ This package provides an MCP (Model Context Protocol) interface for Isaac Sim,
 allowing AI assistants to control Isaac Sim through a WebSocket server.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.4.0"
 
-
+__all__ = ["server"]
 
 # The mcp_server module can be imported directly without Isaac Sim dependencies
 # For the direct connection mode
 try:
     from . import server
-    __all__.append("server")
 except (ImportError, ModuleNotFoundError):
     pass
