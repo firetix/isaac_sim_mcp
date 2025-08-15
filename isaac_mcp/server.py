@@ -216,8 +216,13 @@ async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict[str, Any]]:
             _isaac_connection = None
         logger.info("Isaac SimMCP server shut down")
 
-# Create the MCP server with lifespan support
-mcp = FastMCP("IsaacSimMCP")
+# Create the MCP server with lifespan and verbose logging
+mcp = FastMCP(
+    "IsaacSimMCP",
+    lifespan=server_lifespan,
+    log_level="DEBUG",
+    debug=True,
+)
 
 # Resource endpoints
 
@@ -261,7 +266,7 @@ def get_scene_info(ctx: Context) -> str:
     try:
         isaac = get_isaac_connection()
         result = isaac.send_command("get_scene_info")
-        print("result: ", result)
+        logger.debug(f"get_scene_info result: {result}")
         
         # Just return the JSON representation of what Isaac sent us
         return json.dumps(result, indent=2)
@@ -437,10 +442,10 @@ simulation_context.stop()
     try:
         # Get the global connection
         isaac = get_isaac_connection()
-        print("code: ", code)
+        logger.debug(f"execute_script code: {code}")
         
         result = isaac.send_command("execute_script", {"code": code})
-        print("result: ", result)
+        logger.debug(f"execute_script result: {result}")
         return result
         # return f"Code executed successfully: {result.get('result', '')}"
     except Exception as e:
